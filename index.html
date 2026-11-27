@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>衣櫃顧問</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a calm personal tool, plain words, quick on a phone in a store aisle.
+   IDEA: a garment's woven care label and hang tag; every record reads like a label.
+   PICTURE: the working advisor itself; stitched label cards for clothes, wishes and brands.
+   COLOUR and TYPE: white, denim indigo, one tag red; Archivo for labels, Noto Sans TC for text.
+   LAYOUT: one 860px column, sticky header, tabs at the bottom on phones and on top on wide screens. */
+:root{color-scheme:light dark;
+  --bg:light-dark(#ffffff,#11141c);--panel:light-dark(#f4f5f9,#1a1f2b);--ink:light-dark(#171a22,#eceef4);
+  --muted:light-dark(#5d6273,#a3a9b8);--line:light-dark(#dfe2ea,#2c3242);--indigo:light-dark(#26346b,#9fb0ee);
+  --indigo-ink:light-dark(#ffffff,#10152a);--red:light-dark(#c8372d,#ff7d70);--soft:light-dark(#eef1fb,#20283d)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Noto Sans TC",system-ui,sans-serif;overflow-x:clip}
+button,input,select,textarea{font:inherit;color:inherit}
+.lbl,h1,h2,.tab b{font-family:Archivo,"Noto Sans TC",sans-serif;font-stretch:112%}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:2px solid var(--indigo)}
+.hd{max-width:860px;margin:auto;display:flex;align-items:center;gap:10px;padding:10px 16px}
+h1{font-size:22px;line-height:1.05;margin:0;font-weight:800;color:var(--indigo);flex:1}
+h1 small{display:block;font:500 12px/1.3 "Noto Sans TC",sans-serif;color:var(--muted);font-stretch:100%}
+select,input,textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px;width:100%}
+select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-weight:500;white-space:nowrap}
+.btn.pri{background:var(--indigo);color:var(--indigo-ink);border-color:var(--indigo)}
+.btn.red{color:var(--red);border-color:currentColor}
+.btn.sm{min-height:36px;padding:0 12px;font-size:14px}
+.icon{width:44px;padding:0;display:grid;place-items:center}
+#who{width:auto;max-width:9em}
+nav.tabs{display:flex;max-width:860px;margin:auto;padding:0 8px}
+.tab{flex:1;min-height:52px;border:0;background:none;cursor:pointer;color:var(--muted);border-top:3px solid transparent;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tab b{font-size:15px;font-weight:700}
+.tab[aria-selected=true]{color:var(--indigo);border-top-color:var(--red)}
+main{max-width:860px;margin:auto;padding:16px 16px 170px}
+h2{font-size:28px;line-height:1.05;margin:4px 0 4px;font-weight:800;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grow{flex:1}
+/* the care label */
+.tag{position:relative;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px 14px 12px 18px;margin:8px 0}
+.tag::before{content:"";position:absolute;inset:4px;border:1px dashed var(--line);border-radius:4px;pointer-events:none}
+.tag::after{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;background:var(--indigo);border-radius:0 3px 3px 0}
+.tag.done{opacity:.55}.tag.done .nm{text-decoration:line-through}
+.tag .nm{font-weight:700}
+.tag .meta{color:var(--muted);font-size:14px}
+.tag .acts{position:relative;z-index:1}
+.group{margin-top:22px}
+.lbl{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--indigo);display:flex;align-items:center;gap:8px}
+.lbl .n{background:var(--soft);border-radius:99px;padding:0 8px;font-size:12px}
+.pill{display:inline-block;font-size:12px;border-radius:99px;padding:1px 9px;border:1px solid currentColor;margin-left:6px;vertical-align:2px;font-weight:500}
+.p1{color:var(--red)}.p2{color:var(--indigo)}.p3{color:var(--muted)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+.chip{flex:none;min-height:40px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--bg);cursor:pointer;font-size:14px}
+.chip[aria-pressed=true]{background:var(--indigo);color:var(--indigo-ink);border-color:var(--indigo)}
+.empty{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted)}
+.banner{background:var(--soft);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:15px}
+/* advisor */
+.msgs{display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+.msg{max-width:92%;border-radius:14px;padding:10px 14px;overflow-wrap:anywhere}
+.msg.user{align-self:flex-end;background:var(--indigo);color:var(--indigo-ink);border-bottom-right-radius:4px;white-space:pre-wrap}
+.msg.assistant{align-self:flex-start;background:var(--panel);border-bottom-left-radius:4px}
+.msg.assistant p{margin:.4em 0}.msg.assistant ul,.msg.assistant ol{margin:.3em 0;padding-left:1.3em}
+.msg.assistant h3{font-size:16px;margin:.6em 0 .2em}
+.msg .imgnote{font-size:13px;opacity:.8}
+.actbox{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:6px 0;font-size:14px}
+.act span{flex:1 1 12em}
+.act .st{color:var(--muted);font-size:13px}
+.composer{position:fixed;left:0;right:0;bottom:var(--navh,0px);background:var(--bg);border-top:1px solid var(--line);z-index:15}
+.composer .in{max-width:860px;margin:auto;padding:10px 16px;display:flex;gap:8px;align-items:flex-end}
+.composer textarea{resize:none;max-height:140px;min-height:44px}
+.thumbs{display:flex;gap:6px;max-width:860px;margin:auto;padding:8px 16px 0}
+.thumbs div{position:relative}.thumbs img{width:56px;height:56px;object-fit:cover;border-radius:8px;display:block}
+.thumbs button{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:99px;border:0;background:var(--red);color:#fff;cursor:pointer;line-height:1}
+.typing{color:var(--muted);font-size:14px}
+/* overlays */
+.ov{position:fixed;inset:0;background:rgba(10,12,20,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.dlg{background:var(--bg);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px 24px}
+.dlg h3{font-family:Archivo,"Noto Sans TC",sans-serif;font-stretch:112%;font-size:20px;margin:0 0 12px}
+.dlg label{display:block;font-size:14px;font-weight:500;margin:12px 0 4px}
+.dlg .hint{font-size:13px;color:var(--muted);margin:4px 0 0}
+.dlg .foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--navh,0px) + 84px);background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 14px;z-index:60;display:flex;gap:12px;align-items:center;max-width:92vw;font-size:15px}
+.toast button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;cursor:pointer;min-height:36px}
+.small{font-size:13px;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:20px 0}
+@media(max-width:699px){
+  nav.tabs{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+  body{--navh:56px}
+  .tab{min-height:56px}
+}
+@media(min-width:700px){.ov{align-items:center}.dlg{border-radius:16px}.tab{border-top:0;border-bottom:3px solid transparent;flex-direction:row;gap:6px}.tab[aria-selected=true]{border-bottom-color:var(--red)}}
+@media(prefers-reduced-motion:no-preference){.msg{animation:in .18s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hd">
+    <h1>衣櫃顧問<small id="storeNote">記得你有什麼、缺什麼、喜歡什麼</small></h1>
+    <select id="who" aria-label="切換衣櫃主人"></select>
+    <button class="btn icon" id="openSettings" aria-label="設定" title="設定"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </div>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-t="advisor"><b>顧問</b></button>
+    <button class="tab" role="tab" data-t="closet"><b>衣櫃</b></button>
+    <button class="tab" role="tab" data-t="wish"><b>待買</b></button>
+    <button class="tab" role="tab" data-t="brands"><b>品牌</b></button>
+    <button class="tab" role="tab" data-t="prefs"><b>偏好</b></button>
+  </nav>
+</header>
+<main id="main"><p class="small">載入中…</p></main>
+<div id="composerSlot"></div>
+<input type="file" id="filePick" accept="image/*" multiple hidden>
+<input type="file" id="jsonPick" accept="application/json,.json" hidden>
+<script>
+{
+/* ============ adapter (storage + AI) ============ */
+/* Open-source adapter: data in localStorage, AI through the user's own API key.
+   Requests go straight from the browser to the provider; there is no server. */
+const STORE_KEY = 'wardrobe-advisor-v1';
+const PROVIDERS = {
+  openai:   {label:'OpenAI（GPT）',       model:'gpt-4o-mini',       keyUrl:'https://platform.openai.com/api-keys',      keyHint:'sk-…'},
+  anthropic:{label:'Anthropic（Claude）', model:'claude-sonnet-5-5', keyUrl:'https://console.anthropic.com/settings/keys', keyHint:'sk-ant-…'},
+  gemini:   {label:'Google Gemini',       model:'gemini-flash-lite-latest', keyUrl:'https://aistudio.google.com/apikey',        keyHint:'AIza…'}
+};
+
+/* messages: [{role:'user'|'assistant', text}], starting and ending with 'user'.
+   images: [{mime, b64}] attached to the last user message. */
+function buildRequest(provider, key, model, system, messages, images){
+  images = images || [];
+  const last = messages.length - 1;
+  if(provider === 'openai'){
+    const msgs = [{role:'system', content:system}].concat(messages.map((m, i) => ({
+      role: m.role,
+      content: i === last && images.length
+        ? [{type:'text', text:m.text}].concat(images.map(x => ({type:'image_url', image_url:{url:`data:${x.mime};base64,${x.b64}`}})))
+        : m.text
+    })));
+    return {url:'https://api.openai.com/v1/chat/completions',
+      init:{method:'POST', headers:{'Content-Type':'application/json', 'Authorization':'Bearer ' + key}, body:JSON.stringify({model, messages:msgs})}};
+  }
+  if(provider === 'anthropic'){
+    const msgs = messages.map((m, i) => ({
+      role: m.role,
+      content: i === last && images.length
+        ? images.map(x => ({type:'image', source:{type:'base64', media_type:x.mime, data:x.b64}})).concat([{type:'text', text:m.text}])
+        : m.text
+    }));
+    return {url:'https://api.anthropic.com/v1/messages',
+      init:{method:'POST', headers:{'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model, max_tokens:2048, system, messages:msgs})}};
+  }
+  if(provider === 'gemini'){
+    const contents = messages.map((m, i) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: (i === last ? images.map(x => ({inline_data:{mime_type:x.mime, data:x.b64}})) : []).concat([{text:m.text}])
+    }));
+    return {url:`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`,
+      init:{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({systemInstruction:{parts:[{text:system}]}, contents})}};
+  }
+  throw new Error('不支援的 AI 供應商');
+}
+function parseReply(provider, j){
+  if(provider === 'openai') return j && j.choices && j.choices[0] && j.choices[0].message ? (j.choices[0].message.content || '') : '';
+  if(provider === 'anthropic') return j && Array.isArray(j.content) ? j.content.filter(b => b.type === 'text').map(b => b.text).join('') : '';
+  if(provider === 'gemini'){
+    const c = j && j.candidates && j.candidates[0];
+    if(!c && j && j.promptFeedback && j.promptFeedback.blockReason) return '（這次的內容被 Gemini 的安全設定擋下了，換個說法再試一次。）';
+    return c && c.content && Array.isArray(c.content.parts) ? c.content.parts.map(p => p.text || '').join('') : '';
+  }
+  return '';
+}
+function friendlyError(provider, status, j){
+  const label = PROVIDERS[provider] ? PROVIDERS[provider].label : provider;
+  const raw = j && j.error ? (typeof j.error === 'string' ? j.error : j.error.message) : '';
+  const tail = raw ? `（${raw}）` : '';
+  if(status === 401 || status === 403) return `${label}：API key 不正確、已失效，或沒有這個模型的權限。${tail}`;
+  if(status === 400 && /api key/i.test(raw)) return `${label}：API key 不正確，請重新複製一次。${tail}`;
+  if(status === 404) return `${label}：找不到這個模型名稱，請到設定改成供應商目前提供的模型。${raw ? '（' + raw + '）' : ''}`;
+  if(status === 429) return `${label}：超過用量限制或免費額度用完，請稍後再試，或換一個比較輕量的模型。${tail}`;
+  return `${label} 回應錯誤（${status}）${raw ? '：' + raw : ''}`;
+}
+
+const Adapter = {
+  headerNote: '資料只存在這個瀏覽器',
+  storageNote: '所有資料（包括 API key）只存在這台裝置的瀏覽器，不會上傳到任何伺服器。問顧問時，請求會從你的瀏覽器直接送到你選的 AI 供應商。換裝置或換瀏覽器時，用匯出、匯入搬資料。',
+  canDownload: true,
+  missingAI: '先到右上角「設定」選一個 AI 供應商，並填入你自己的 API key，就可以開始問。',
+  async load(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)); }catch(e){ return null; } },
+  save(s){
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(s)); }
+    catch(e){ if(typeof toast === 'function') toast('儲存失敗：瀏覽器空間不足，可以先清除舊對話'); }
+  },
+  aiReady(s){ const st = s.settings || {}; return !!(st.provider && PROVIDERS[st.provider] && st.keys && st.keys[st.provider]); },
+  async chat({system, messages, images, settings, timeoutMs}){
+    const st = settings || {}, provider = st.provider;
+    const key = (st.keys || {})[provider], model = ((st.models || {})[provider] || PROVIDERS[provider].model).trim();
+    const {url, init} = buildRequest(provider, key, model, system, messages, images);
+    const wait = timeoutMs || 90000;
+    const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), wait);
+    let res, j = null;
+    try{ res = await fetch(url, Object.assign({}, init, {signal:ctl.signal})); }
+    catch(e){ throw new Error(e && e.name === 'AbortError'
+      ? `${Math.round(wait/1000)} 秒內沒有回應。可能是模型「${model}」太慢或目前不開放給你的帳號，試試換成預設的 ${PROVIDERS[provider].model}。`
+      : `連不到 ${PROVIDERS[provider].label}，請檢查網路連線。`); }
+    finally{ clearTimeout(timer); }
+    try{ j = await res.json(); }catch(e){ j = null; }
+    if(!res.ok) throw new Error(friendlyError(provider, res.status, j));
+    return parseReply(provider, j);
+  },
+  settingsHTML(s){
+    const st = s.settings || {}, p = st.provider || 'openai';
+    return `<div class="lbl">AI 模型</div><p class="hint">用你自己的 API key，費用由供應商直接向你收取。key 只存在這個瀏覽器。</p>
+    <label for="prov">供應商</label><select id="prov">${Object.entries(PROVIDERS).map(([k,v]) => `<option value="${k}"${k===p?' selected':''}>${esc(v.label)}</option>`).join('')}</select>
+    <label for="akey">API key</label><input id="akey" type="password" autocomplete="off" spellcheck="false">
+    <p class="hint">還沒有 key？到 <a id="keylink" target="_blank" rel="noopener noreferrer"></a> 申請。</p>
+    <label for="amodel">模型名稱</label><input id="amodel" autocomplete="off" spellcheck="false">
+    <p class="hint">預設值可能會過時，可以改成供應商目前提供、而且看得懂照片的模型。</p>
+    <div class="row" style="margin-top:10px"><button class="btn" id="atest" type="button">測試連線</button><span class="small" id="ares" role="status"></span></div>`;
+  },
+  bindSettings(d, s, save){
+    const st = s.settings = s.settings || {}; st.keys = st.keys || {}; st.models = st.models || {};
+    if(!st.provider) st.provider = 'openai';
+    const prov = d.querySelector('#prov'), key = d.querySelector('#akey'), model = d.querySelector('#amodel'), link = d.querySelector('#keylink');
+    const fill = () => {
+      const p = prov.value, info = PROVIDERS[p];
+      key.value = st.keys[p] || ''; key.placeholder = info.keyHint;
+      model.value = st.models[p] || info.model; model.placeholder = info.model;
+      link.href = info.keyUrl; link.textContent = info.keyUrl.replace('https://','');
+    };
+    fill();
+    prov.onchange = () => { st.provider = prov.value; fill(); save(); };
+    key.oninput = () => { st.keys[prov.value] = key.value.trim(); save(); };
+    model.oninput = () => { st.models[prov.value] = model.value.trim(); save(); };
+    d.querySelector('#atest').onclick = async () => {
+      const out = d.querySelector('#ares');
+      if(!st.keys[prov.value]){ out.textContent = '請先填入 API key'; return; }
+      const btn = d.querySelector('#atest'); btn.disabled = true;
+      const t0 = Date.now(); out.textContent = '測試中…';
+      const tick = setInterval(() => { out.textContent = `測試中… ${Math.round((Date.now() - t0)/1000)} 秒`; }, 1000);
+      try{ const r = await Adapter.chat({system:'Reply with the single word OK.', messages:[{role:'user', text:'ping'}], images:[], settings:st, timeoutMs:20000});
+        out.textContent = r ? `連線成功 ✓（${((Date.now() - t0)/1000).toFixed(1)} 秒）` : '有回應，但內容是空的'; }
+      catch(e){ out.textContent = e.message; }
+      finally{ clearInterval(tick); btn.disabled = false; }
+    };
+  }
+};
+
+
+/* ============ helpers ============ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const FENCE = '`'.repeat(3);
+const CATS = ['外套','西裝外套','襯衫','上衣','針織衫','褲子','裙子','洋裝','鞋子','配件','其他'];
+const STANCES = [['like','喜歡'],['explore','想認識'],['ok','普通'],['dislike','不喜歡']];
+const STANCE = Object.fromEntries(STANCES);
+const PRI = {1:'優先',2:'之後',3:'有空再說'};
+const PREF_FIELDS = [
+  ['style','風格','例：簡約低調、business casual、不喜歡大 logo'],
+  ['fit','身形與版型','例：肩寬、偏好 Slim Fit 還是 Regular Fit'],
+  ['budget','預算與購物習慣','例：重視 CP 值，常逛 outlet、折扣店'],
+  ['location','所在地區與氣候','例：所在城市，冬天約 5–15°C、常下雨'],
+  ['likes','喜歡的材質、顏色','例：棉、羊毛；深藍、灰、咖啡色'],
+  ['dislikes','不喜歡的','例：大 logo、容易起毛球的布料'],
+  ['notes','其他備註','例：常用組合、尺寸（襯衫 M、西裝外套 40R）']
+];
+
+function blankProfile(name){ return {id:uid(), name, prefs:{}, items:[], wishlist:[], brands:[]}; }
+function blankState(){ const p = blankProfile('我'); return {v:1, settings:{}, active:p.id, profiles:[p], chats:{}}; }
+function normalize(s){
+  if(!s || typeof s !== 'object' || !Array.isArray(s.profiles) || !s.profiles.length) return null;
+  s.v = 1; s.settings = s.settings && typeof s.settings==='object' ? s.settings : {}; s.chats = s.chats && typeof s.chats==='object' ? s.chats : {};
+  for(const p of s.profiles){
+    p.id = String(p.id || uid()); p.name = String(p.name || '我'); p.prefs = p.prefs && typeof p.prefs==='object' ? p.prefs : {};
+    for(const k of ['items','wishlist','brands']) p[k] = Array.isArray(p[k]) ? p[k].filter(x => x && typeof x==='object') : [];
+    for(const k of ['items','wishlist','brands']) for(const x of p[k]) x.id = String(x.id || uid());
+  }
+  if(!s.profiles.some(p => p.id === s.active)) s.active = s.profiles[0].id;
+  return s;
+}
+
+/* ============ example data ============ */
+
+function exampleState(){
+  if(typeof privateExample === 'function') return privateExample();
+  const it = (category,name,color,brand,material,notes) => ({id:uid(),category,name,color,brand,material,notes});
+  const w = (name,category,priority,notes) => ({id:uid(),name,category,priority,notes,done:false});
+  const b = (name,stance,notes) => ({id:uid(),name,stance,notes});
+  const me = {id:uid(), name:'小明（範例）', prefs:{
+    style:'簡約、上班偏 business casual',
+    fit:'中等身材，襯衫 M、褲子腰圍 32',
+    budget:'平價到中價位，喜歡等折扣再買',
+    location:'四季分明的城市，冬天約 5–15°C',
+    likes:'棉、羊毛；深藍、灰、白',
+    dislikes:'大 logo、太薄的布料',
+    notes:'常用組合：深藍外套＋白襯衫＋灰褲＋咖啡色樂福鞋'},
+    items:[
+      it('西裝外套','深藍色休閒西裝外套','深藍','','羊毛混紡','日常主力'),
+      it('襯衫','白色牛津襯衫','白','Uniqlo','100% 棉',''),
+      it('襯衫','淺藍條紋襯衫','淺藍','','',''),
+      it('上衣','素色 T 恤','灰','','100% 棉',''),
+      it('針織衫','圓領毛衣','深灰','','美麗諾羊毛',''),
+      it('褲子','卡其褲','卡其','','',''),
+      it('褲子','深色牛仔褲','深藍','','98% 棉、2% 彈性纖維',''),
+      it('褲子','西裝褲','中灰','','',''),
+      it('外套','羽絨外套','黑','','','冬天用'),
+      it('鞋子','樂福鞋','咖啡色','','皮革',''),
+      it('鞋子','休閒鞋','白','','',''),
+      it('配件','皮帶','咖啡色','','皮革','')
+    ],
+    wishlist:[
+      w('炭灰色西裝褲','褲子',1,'要明顯比中灰色深，最好含羊毛'),
+      w('淡粉色襯衫','襯衫',2,'100% 棉'),
+      w('輕量防水外套','外套',2,'下雨天通勤用'),
+      w('黑色皮鞋','鞋子',3,'正式場合用')
+    ],
+    brands:[
+      b('Uniqlo','like','平價基本款'),
+      b('Banana Republic','like','打折時划算'),
+      b('Zara','ok','流行款，看材質再買'),
+      b('COS','explore','極簡、沒有大 logo'),
+      b('J.Crew','explore','經典牛津襯衫、卡其褲'),
+      b('Muji','explore','素雅、材質單純')
+    ]};
+  const fam = {id:uid(), name:'家人（範例）', prefs:{style:'簡約、大地色系，喜歡中長裙'},
+    items:[ it('外套','大衣','米色','','',''), it('針織衫','高領毛衣','黑','','',''), it('裙子','百褶裙','深藍','','','') ],
+    wishlist:[ w('薄針織開襟衫','針織衫',2,'搭無袖洋裝') ], brands:[] };
+  return {v:1, settings:{}, active:me.id, profiles:[me, fam], chats:{}};
+}
+
+/* ============ state ============ */
+let S = null, tab = 'advisor', filterCat = '', query = '', busy = false, pending = [], undoFn = null;
+const cur = () => S.profiles.find(p => p.id === S.active) || S.profiles[0];
+let saveTimer = null;
+function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveTimer = null; Adapter.save(S); }, 600); }
+function flush(){ if(saveTimer){ clearTimeout(saveTimer); saveTimer = null; Adapter.save(S); } }
+addEventListener('pagehide', flush);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') flush(); });
+
+/* ============ markdown (escape first) ============ */
+function md(src){
+  const inline = t => esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  const out = []; let list = null;
+  const close = () => { if(list){ out.push(`</${list}>`); list = null; } };
+  for(const raw of String(src).split('\n')){
+    const l = raw.trimEnd();
+    let m;
+    if(!l.trim()){ close(); continue; }
+    if((m = l.match(/^#{1,4}\s+(.*)/))){ close(); out.push(`<h3>${inline(m[1])}</h3>`); continue; }
+    if((m = l.match(/^\s*[-*•]\s+(.*)/))){ if(list!=='ul'){ close(); out.push('<ul>'); list='ul'; } out.push(`<li>${inline(m[1])}</li>`); continue; }
+    if((m = l.match(/^\s*\d+[.)]\s+(.*)/))){ if(list!=='ol'){ close(); out.push('<ol>'); list='ol'; } out.push(`<li>${inline(m[1])}</li>`); continue; }
+    close(); out.push(`<p>${inline(l)}</p>`);
+  }
+  close(); return out.join('');
+}
+
+/* ============ AI: prompt, actions ============ */
+function compact(p){
+  return {name:p.name, prefs:p.prefs,
+    items:p.items.map(({id,category,name,color,brand,material,notes}) => ({id,category,name,color,brand,material,notes})),
+    wishlist:p.wishlist.filter(x => !x.done).map(({id,name,category,priority,notes}) => ({id,name,category,priority,notes})),
+    brands:p.brands.map(({name,stance,notes}) => ({name,stance,notes}))};
+}
+function systemPrompt(p){
+  return [
+`你是一位誠實、專業的個人穿搭與購物顧問，服務對象是「${p.name}」。`,
+`回答原則：
+- 用使用者的語言回答（預設繁體中文），對方多半在手機上、甚至正站在店裡：先給結論，再列 2–5 個重點。
+- 一定要對照使用者「已經有的衣服」「待買清單」「品牌偏好」「身形與預算」：會不會重複、能不能搭現有衣服、這個價錢值不值得。
+- 看照片時辨識品牌、款式、顏色、吊牌價格、成分標籤和尺寸；看不清楚就請對方再拍。
+- 誠實：適合就說買，不適合就說跳過，不要為了討好而鼓勵消費。
+- 品牌現況、價格這類事實不確定時要明說，不要捏造。`,
+`記憶更新：如果對話中出現值得記下來的事（買了新衣服、某件不要了、新的偏好、缺什麼、對某品牌的看法），在回答最後附上一個區塊，格式如下：
+${FENCE}wardrobe-actions
+[{"type":"add_item","category":"襯衫","name":"淺藍牛津襯衫","color":"淺藍","brand":"Uniqlo","material":"100% 棉","notes":""}]
+${FENCE}
+可用的 type：
+- add_item：category、name、color、brand、material、notes
+- remove_item：id（衣櫃清單裡的 id）
+- add_wish：name、category、priority（1 優先、2 之後、3 有空再說）、notes
+- complete_wish：id（待買清單裡的 id，買到了就用這個）
+- set_brand：name、stance（like、explore、ok、dislike）、notes
+- set_pref：field（style、fit、budget、location、likes、dislikes、notes 其中之一）、value（該欄位完整的新內容）
+category 只能用：${CATS.join('、')}。
+只在真的需要更新時才附上這個區塊，使用者會逐項確認後才寫入。區塊外的文字不要提到 JSON 或這個區塊。只有使用者說「買了」才用 add_item，還在考慮的不要加。`,
+`使用者目前的資料：
+${JSON.stringify(compact(p))}`
+  ].join('\n\n');
+}
+function splitActions(text){
+  const re = new RegExp(FENCE + 'wardrobe-actions\\s*([\\s\\S]*?)(' + FENCE + '|$)');
+  const m = String(text).match(re);
+  if(!m) return {text:String(text).trim(), actions:[]};
+  let actions = [];
+  try{ const j = JSON.parse(m[1].trim()); actions = (Array.isArray(j) ? j : [j]).filter(validAction); }catch(e){ actions = []; }
+  return {text:String(text).replace(m[0],'').trim(), actions};
+}
+function validAction(a){
+  if(!a || typeof a !== 'object') return false;
+  switch(a.type){
+    case 'add_item': return !!a.name;
+    case 'remove_item': case 'complete_wish': return !!a.id;
+    case 'add_wish': return !!a.name;
+    case 'set_brand': return !!a.name && !!STANCE[a.stance];
+    case 'set_pref': return PREF_FIELDS.some(f => f[0] === a.field) && typeof a.value === 'string';
+    default: return false;
+  }
+}
+function describe(a, p){
+  const find = (arr,id) => arr.find(x => x.id === a.id);
+  switch(a.type){
+    case 'add_item': return `加入衣櫃：${a.category||'其他'}・${a.name}${a.brand?`（${a.brand}）`:''}`;
+    case 'remove_item': { const x = find(p.items); return x ? `從衣櫃移除：${x.name}` : '從衣櫃移除（找不到這件）'; }
+    case 'add_wish': return `加入待買：${a.name}`;
+    case 'complete_wish': { const x = find(p.wishlist); return x ? `待買完成：${x.name}` : '待買完成（找不到這項）'; }
+    case 'set_brand': return `品牌「${a.name}」標為${STANCE[a.stance]}${a.notes?`：${a.notes}`:''}`;
+    case 'set_pref': { const f = PREF_FIELDS.find(f => f[0] === a.field); return `更新偏好「${f[1]}」：${a.value}`; }
+  }
+  return '';
+}
+function apply(a, p){
+  const s = v => String(v ?? '').slice(0, 300);
+  switch(a.type){
+    case 'add_item': p.items.push({id:uid(), category:CATS.includes(a.category)?a.category:'其他', name:s(a.name), color:s(a.color), brand:s(a.brand), material:s(a.material), notes:s(a.notes)}); return true;
+    case 'remove_item': { const i = p.items.findIndex(x => x.id === a.id); if(i<0) return false; p.items.splice(i,1); return true; }
+    case 'add_wish': p.wishlist.push({id:uid(), name:s(a.name), category:CATS.includes(a.category)?a.category:'其他', priority:[1,2,3].includes(+a.priority)?+a.priority:2, notes:s(a.notes), done:false}); return true;
+    case 'complete_wish': { const x = p.wishlist.find(x => x.id === a.id); if(!x) return false; x.done = true; return true; }
+    case 'set_brand': { const n = s(a.name).toLowerCase(); const x = p.brands.find(b => b.name.toLowerCase() === n);
+      if(x){ x.stance = a.stance; if(a.notes) x.notes = s(a.notes); } else p.brands.push({id:uid(), name:s(a.name), stance:a.stance, notes:s(a.notes)}); return true; }
+    case 'set_pref': p.prefs[a.field] = String(a.value).slice(0, 1000); return true;
+  }
+  return false;
+}
+function history(list){
+  const msgs = [], recent = list.slice(-16);
+  for(const m of recent){
+    const text = m.role === 'user' && m.imgs && m !== recent[recent.length-1] ? `${m.text || ''}\n（這則訊息當時附了 ${m.imgs} 張照片）` : (m.text || '');
+    if(!text.trim()) continue;
+    const last = msgs[msgs.length-1];
+    if(last && last.role === m.role) last.text += '\n\n' + text; else msgs.push({role:m.role, text});
+  }
+  while(msgs.length && msgs[0].role !== 'user') msgs.shift();
+  return msgs;
+}
+
+/* ============ images ============ */
+async function shrink(file){
+  const url = URL.createObjectURL(file);
+  try{
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*k); c.height = Math.round(img.naturalHeight*k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .85));
+    const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1]); fr.readAsDataURL(blob); });
+    return {blob, mime:'image/jpeg', b64, preview:URL.createObjectURL(blob)};
+  } finally { URL.revokeObjectURL(url); }
+}
+
+/* ============ render ============ */
+function render(){
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.t === tab));
+  $('#who').innerHTML = S.profiles.map(p => `<option value="${esc(p.id)}"${p.id===S.active?' selected':''}>${esc(p.name)}</option>`).join('');
+  const views = {advisor:vAdvisor, closet:vCloset, wish:vWish, brands:vBrands, prefs:vPrefs};
+  $('#main').innerHTML = views[tab]();
+  $('#composerSlot').innerHTML = tab === 'advisor' ? composerHTML() : '';
+  if(tab === 'advisor'){ const box = $('#msgs'); if(box) window.scrollTo(0, document.body.scrollHeight); }
+}
+
+function vAdvisor(){
+  const p = cur(), list = S.chats[p.id] || [];
+  const ready = Adapter.aiReady(S);
+  const quick = ['我的衣櫃還缺什麼？請依優先順序列出。','根據我的喜好，推薦幾個值得認識的品牌，並說明定位。','用我現有的衣服，幫我搭一套 business casual 餐廳的穿搭。','我拍了一件衣服和吊牌，幫我判斷值不值得買。'];
+  let h = `<h2>問顧問</h2><p class="sub">${esc(p.name)}的衣櫃有 ${p.items.length} 件、待買 ${p.wishlist.filter(x=>!x.done).length} 項。拍照或打字問都可以。</p>`;
+  if(!ready) h += `<div class="banner">${Adapter.missingAI}</div>`;
+  h += `<div class="chips">${quick.map((q,i) => `<button class="chip" data-quick="${i}">${esc(q.replace(/[，。？].*$/,''))}</button>`).join('')}</div>`;
+  if(!list.length) h += `<div class="empty">還沒有對話。試試上面的快速問題，或拍一張店裡的衣服加吊牌問「值得買嗎？」。顧問回答時，如果有該記下來的事，會附上「套用」按鈕讓你一鍵更新衣櫃。</div>`;
+  h += `<div class="msgs" id="msgs">${list.map((m,i) => msgHTML(m,i)).join('')}${busy?`<div class="msg assistant" id="live"><span class="typing">思考中…</span></div>`:''}</div>`;
+  if(list.length) h += `<p class="small"><button class="btn sm" data-act="clearChat">清除這段對話</button>（衣櫃資料不會被刪）</p>`;
+  window.__quick = quick;
+  return h;
+}
+function msgHTML(m, i){
+  if(m.role === 'user') return `<div class="msg user">${esc(m.text)}${m.imgs?`<div class="imgnote">📎 ${m.imgs} 張照片</div>`:''}</div>`;
+  const p = cur();
+  let acts = '';
+  if(m.actions && m.actions.length){
+    const st = m.actionState || [];
+    const open = m.actions.some((_,k) => !st[k]);
+    acts = `<div class="actbox"><div class="lbl">要記下來嗎？</div>${m.actions.map((a,k) => `<div class="act"><span>${esc(describe(a,p))}</span>${st[k] ? `<span class="st">${st[k]==='applied'?'已套用':st[k]==='failed'?'找不到，略過':'已略過'}</span>` : `<button class="btn sm pri" data-apply="${i}:${k}">套用</button><button class="btn sm" data-skip="${i}:${k}">略過</button>`}</div>`).join('')}${open && m.actions.length>1?`<button class="btn sm" data-applyall="${i}">全部套用</button>`:''}</div>`;
+  }
+  return `<div class="msg assistant">${md(m.text)}${acts}</div>`;
+}
+function composerHTML(){
+  return `<div class="composer">${pending.length?`<div class="thumbs">${pending.map((x,i) => `<div><img src="${x.preview}" alt="待傳送的照片 ${i+1}"><button data-unpick="${i}" aria-label="移除照片">×</button></div>`).join('')}</div>`:''}<div class="in">
+    <button class="btn icon" data-act="pick" aria-label="附加照片" title="附加照片"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="12" cy="12.5" r="3.5"/><path d="M8 5l1.5-2h5L16 5"/></svg></button>
+    <textarea id="ask" rows="1" placeholder="例：這件 $39.99 值得買嗎？" aria-label="輸入問題"></textarea>
+    <button class="btn pri" data-act="send"${busy?' disabled':''}>送出</button>
+  </div></div>`;
+}
+
+function tagRow(x, kind){
+  const meta = kind==='item' ? [x.color, x.brand, x.material].filter(Boolean).join('・')
+            : kind==='wish' ? [x.category, x.notes].filter(Boolean).join('・')
+            : x.notes;
+  const pill = kind==='wish' ? `<span class="pill p${x.priority||2}">${PRI[x.priority||2]}</span>` : '';
+  const check = kind==='wish' ? `<button class="btn sm" data-done="${esc(x.id)}" aria-label="${x.done?'標為未完成':'標為已買'}">${x.done?'↺':'✓'}</button>` : '';
+  return `<div class="tag${x.done?' done':''}"><div class="row"><div class="grow"><div class="nm">${esc(x.name)}${pill}</div>${meta?`<div class="meta">${esc(meta)}</div>`:''}${kind==='item'&&x.notes?`<div class="meta">${esc(x.notes)}</div>`:''}</div>
+  <div class="row acts">${check}<button class="btn sm" data-edit="${kind}:${esc(x.id)}">編輯</button><button class="btn sm red" data-del="${kind}:${esc(x.id)}" aria-label="刪除">刪除</button></div></div></div>`;
+}
+function vCloset(){
+  const p = cur();
+  let h = `<h2>${esc(p.name)}的衣櫃</h2><p class="sub">共 ${p.items.length} 件。顧問會根據這份清單判斷會不會重複、能不能搭。</p>
+  <div class="row"><input class="grow" id="q" placeholder="搜尋名稱、顏色、品牌" value="${esc(query)}" aria-label="搜尋衣櫃"><button class="btn pri" data-add="item">＋ 新增</button></div>
+  <div class="chips" style="margin-top:8px"><button class="chip" data-cat="" aria-pressed="${!filterCat}">全部</button>${CATS.filter(c => p.items.some(x => x.category===c)).map(c => `<button class="chip" data-cat="${esc(c)}" aria-pressed="${filterCat===c}">${esc(c)}</button>`).join('')}</div>`;
+  return h + `<div id="closetList">${closetList()}</div>`;
+}
+function closetList(){
+  const p = cur();
+  const q = query.trim().toLowerCase();
+  const items = p.items.filter(x => (!filterCat || x.category === filterCat) && (!q || [x.name,x.color,x.brand,x.material,x.notes].join(' ').toLowerCase().includes(q)));
+  let h = '';
+  if(!p.items.length) return `<div class="empty">衣櫃是空的。手動新增，或到「顧問」拍照告訴它你有哪些衣服。${S.profiles.length===1&&!p.items.length?'<br><br><button class="btn" data-act="example">載入範例衣櫃看看</button>':''}</div>`;
+  if(!items.length) return `<div class="empty">沒有符合的衣服。</div>`;
+  for(const c of CATS){ const g = items.filter(x => (CATS.includes(x.category)?x.category:'其他') === c); if(g.length) h += `<div class="group"><div class="lbl">${esc(c)}<span class="n">${g.length}</span></div>${g.map(x => tagRow(x,'item')).join('')}</div>`; }
+  return h;
+}
+function vWish(){
+  const p = cur();
+  const open = p.wishlist.filter(x => !x.done).sort((a,b) => (a.priority||2)-(b.priority||2));
+  const done = p.wishlist.filter(x => x.done);
+  let h = `<h2>還缺什麼</h2><p class="sub">逛街時先看這裡。買到了按 ✓，顧問也會幫你更新。</p>
+  <div class="row"><button class="btn pri" data-add="wish">＋ 新增</button><button class="btn" data-ask="根據我現有的衣櫃和偏好，分析我還缺哪些單品，依優先順序列出，並用 add_wish 動作建議加入待買清單（不要重複清單上已有的）。">請顧問分析缺口</button></div>`;
+  if(!p.wishlist.length) return h + `<div class="empty" style="margin-top:12px">待買清單是空的。</div>`;
+  if(open.length) h += `<div class="group"><div class="lbl">待買<span class="n">${open.length}</span></div>${open.map(x => tagRow(x,'wish')).join('')}</div>`;
+  if(done.length) h += `<div class="group"><div class="lbl">已買到<span class="n">${done.length}</span></div>${done.map(x => tagRow(x,'wish')).join('')}</div>`;
+  return h;
+}
+function vBrands(){
+  const p = cur();
+  let h = `<h2>品牌筆記</h2><p class="sub">喜歡、想認識、普通、不喜歡。顧問推薦品牌時會避開你不喜歡的。</p>
+  <div class="row"><button class="btn pri" data-add="brand">＋ 新增</button><button class="btn" data-ask="根據我的喜好和品牌筆記，推薦 4–6 個我還沒記錄、值得認識的品牌，說明定位、價位、適合買什麼，以及在我所在地區哪裡容易買到。用 set_brand（stance 用 explore）建議加入。">請顧問推薦品牌</button></div>`;
+  if(!p.brands.length) return h + `<div class="empty" style="margin-top:12px">還沒有品牌筆記。</div>`;
+  for(const [k,label] of STANCES){ const g = p.brands.filter(b => b.stance === k); if(g.length) h += `<div class="group"><div class="lbl">${label}<span class="n">${g.length}</span></div>${g.map(x => tagRow(x,'brand')).join('')}</div>`; }
+  return h;
+}
+function vPrefs(){
+  const p = cur();
+  return `<h2>${esc(p.name)}的偏好</h2><p class="sub">寫得越具體，顧問越懂你。打字會自動儲存。</p>
+  ${PREF_FIELDS.map(([k,label,ph]) => `<label class="lbl" for="pf-${k}" style="margin-top:16px">${label}</label><textarea id="pf-${k}" data-pref="${k}" rows="2" placeholder="${esc(ph)}" style="margin-top:6px">${esc(p.prefs[k]||'')}</textarea>`).join('')}
+  <hr><div class="lbl">衣櫃主人</div><p class="small">可以幫家人各建一個衣櫃，例如「我」和家人。</p>
+  <div class="row"><button class="btn" data-act="rename">重新命名「${esc(p.name)}」</button><button class="btn" data-act="addProfile">＋ 新增一個人</button>${S.profiles.length>1?`<button class="btn red" data-act="delProfile">刪除「${esc(p.name)}」</button>`:''}</div>`;
+}
+
+/* ============ dialogs & toast ============ */
+function dialog(html, onMount){
+  const ov = document.createElement('div'); ov.className = 'ov';
+  ov.innerHTML = `<div class="dlg" role="dialog" aria-modal="true">${html}</div>`;
+  const close = () => ov.remove();
+  ov.addEventListener('click', e => { if(e.target === ov || e.target.closest('[data-close]')) close(); });
+  ov.addEventListener('keydown', e => { if(e.key === 'Escape') close(); });
+  document.body.appendChild(ov);
+  onMount && onMount(ov.querySelector('.dlg'), close);
+  const f = ov.querySelector('input,select,textarea,button'); f && f.focus();
+  return close;
+}
+function confirmBox(text, okLabel, fn){
+  dialog(`<h3>${esc(text)}</h3><div class="foot"><button class="btn" data-close>取消</button><button class="btn red" id="ok">${esc(okLabel)}</button></div>`,
+    (d, close) => d.querySelector('#ok').onclick = () => { close(); fn(); });
+}
+function toast(text, undo){
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role','status');
+  t.innerHTML = `<span>${esc(text)}</span>${undo?'<button>復原</button>':''}`;
+  if(undo) t.querySelector('button').onclick = () => { undo(); t.remove(); };
+  document.body.appendChild(t); setTimeout(() => t.remove(), 5000);
+}
+function editForm(kind, x){
+  const isNew = !x; x = x || {};
+  const f = (id,label,val,ph='') => `<label for="f-${id}">${label}</label><input id="f-${id}" value="${esc(val||'')}" placeholder="${esc(ph)}">`;
+  const catSel = `<label for="f-category">類別</label><select id="f-category">${CATS.map(c => `<option${(x.category||'')===c?' selected':''}>${esc(c)}</option>`).join('')}</select>`;
+  let body = '';
+  if(kind === 'item') body = catSel + f('name','名稱',x.name,'例：淺藍牛津襯衫') + f('color','顏色',x.color) + f('brand','品牌',x.brand) + f('material','材質',x.material,'例：100% 棉') + f('notes','備註',x.notes,'例：合身、偏休閒');
+  if(kind === 'wish') body = f('name','想買什麼',x.name,'例：炭灰色西裝褲') + catSel + `<label for="f-priority">優先程度</label><select id="f-priority">${[1,2,3].map(n => `<option value="${n}"${(x.priority||2)===n?' selected':''}>${PRI[n]}</option>`).join('')}</select>` + f('notes','條件',x.notes,'例：100% 棉、Slim Fit');
+  if(kind === 'brand') body = f('name','品牌',x.name) + `<label for="f-stance">看法</label><select id="f-stance">${STANCES.map(([k,l]) => `<option value="${k}"${(x.stance||'explore')===k?' selected':''}>${l}</option>`).join('')}</select>` + f('notes','筆記',x.notes,'例：品質中等，打折時買');
+  const title = {item:'衣服',wish:'待買',brand:'品牌'}[kind];
+  dialog(`<h3>${isNew?'新增':'編輯'}${title}</h3><form id="ef">${body}<div class="foot"><button type="button" class="btn" data-close>取消</button><button class="btn pri">儲存</button></div></form>`, (d, close) => {
+    d.querySelector('#ef').onsubmit = e => {
+      e.preventDefault();
+      const v = id => (d.querySelector('#f-'+id)?.value || '').trim();
+      if(!v('name')) { d.querySelector('#f-name').focus(); return; }
+      const p = cur(), arr = kind==='item' ? p.items : kind==='wish' ? p.wishlist : p.brands;
+      const rec = isNew ? {id:uid()} : x;
+      rec.name = v('name');
+      if(kind==='item') Object.assign(rec, {category:v('category'), color:v('color'), brand:v('brand'), material:v('material'), notes:v('notes')});
+      if(kind==='wish') Object.assign(rec, {category:v('category'), priority:+v('priority'), notes:v('notes'), done:!!rec.done});
+      if(kind==='brand') Object.assign(rec, {stance:v('stance'), notes:v('notes')});
+      if(isNew) arr.push(rec);
+      save(); close(); render();
+    };
+  });
+}
+
+function openSettings(){
+  dialog(`<h3>設定</h3>${Adapter.settingsHTML(S)}
+  <hr><div class="lbl">資料</div><p class="hint">${esc(Adapter.storageNote)}</p>
+  <div class="row" style="margin-top:10px"><button class="btn" id="exp">匯出備份</button><button class="btn" id="imp">匯入備份</button><button class="btn" id="ex">載入範例資料</button><button class="btn red" id="rst">清空全部</button></div>
+  <div class="foot"><button class="btn pri" data-close>完成</button></div>`, (d, close) => {
+    Adapter.bindSettings(d, S, () => { save(); });
+    d.querySelector('#exp').onclick = () => { close(); exportData(); };
+    d.querySelector('#imp').onclick = () => { close(); importData(); };
+    d.querySelector('#ex').onclick = () => { close(); confirmBox('載入範例會取代目前的資料，確定嗎？', '載入範例', () => loadExample()); };
+    d.querySelector('#rst').onclick = () => { close(); confirmBox('清空所有衣櫃、待買、品牌和對話？', '清空', () => { const keep = S.settings; S = blankState(); S.settings = keep; save(); render(); toast('已清空'); }); };
+  });
+}
+function loadExample(){ const keep = S.settings; S = exampleState(); S.settings = keep; save(); tab = 'closet'; render(); toast('已載入範例資料'); }
+function portable(){ const c = JSON.parse(JSON.stringify(S)); c.settings = {}; return c; }
+function exportData(){
+  const json = JSON.stringify(portable(), null, 2);
+  dialog(`<h3>匯出備份</h3><p class="hint">複製這段文字存起來，換電腦或換瀏覽器時用「匯入備份」貼回來。API key 不會包含在內。</p>
+  <textarea id="ej" rows="10" readonly style="margin-top:10px;font-size:13px"></textarea>
+  <div class="foot"><button class="btn" data-close>關閉</button>${Adapter.canDownload?'<button class="btn" id="dl">下載 .json</button>':''}<button class="btn pri" id="cp">複製</button></div>`, d => {
+    d.querySelector('#ej').value = json;
+    d.querySelector('#cp').onclick = async e => { try{ await navigator.clipboard.writeText(json); e.target.textContent = '已複製'; }catch(_){ d.querySelector('#ej').select(); e.target.textContent = '請手動複製'; } };
+    const dl = d.querySelector('#dl'); if(dl) dl.onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json],{type:'application/json'})); a.download = 'wardrobe-backup.json'; a.click(); };
+  });
+}
+function importData(){
+  dialog(`<h3>匯入備份</h3><p class="hint">貼上之前匯出的文字，或選擇 .json 檔。目前的資料會被取代。</p>
+  <textarea id="ij" rows="8" style="margin-top:10px;font-size:13px" placeholder='{"v":1,"profiles":[...]}'></textarea><p class="hint" id="ierr" style="color:var(--red)"></p>
+  <div class="foot"><button class="btn" data-close>取消</button><button class="btn" id="file">選擇檔案</button><button class="btn pri" id="go">匯入</button></div>`, (d, close) => {
+    d.querySelector('#file').onclick = () => { const fp = $('#jsonPick'); fp.onchange = async () => { const f = fp.files[0]; if(f) d.querySelector('#ij').value = await f.text(); fp.value = ''; }; fp.click(); };
+    d.querySelector('#go').onclick = () => {
+      let s; try{ s = normalize(JSON.parse(d.querySelector('#ij').value)); }catch(e){ s = null; }
+      if(!s){ d.querySelector('#ierr').textContent = '看不懂這段資料，請確認是完整的備份。'; return; }
+      s.settings = S.settings; S = s; save(); close(); render(); toast('匯入完成');
+    };
+  });
+}
+
+/* ============ chat ============ */
+async function ask(text){
+  text = String(text || '').trim();
+  if(busy) return;
+  if(!text && !pending.length) return;
+  if(!Adapter.aiReady(S)){ toast('先到設定連接 AI'); openSettings(); return; }
+  const p = cur(); const list = S.chats[p.id] = S.chats[p.id] || [];
+  const imgs = pending; pending = [];
+  if(!text) text = '這件值得買嗎？請對照我的衣櫃和偏好判斷。';
+  list.push({role:'user', text, imgs:imgs.length});
+  busy = true; tab = 'advisor'; render();
+  const msgs = history(list);
+  try{
+    const out = await Adapter.chat({system:systemPrompt(p), messages:msgs, images:imgs, settings:S.settings, onText:t => { const live = $('#live'); if(live){ live.innerHTML = md(splitActions(t).text); } }});
+    const {text:clean, actions} = splitActions(out);
+    list.push({role:'assistant', text:clean || '（沒有收到回答）', actions, actionState:[]});
+  }catch(e){
+    list.push({role:'assistant', text:'⚠️ ' + (e && e.message ? e.message : '連線失敗，請稍後再試。'), actions:[]});
+  }finally{
+    imgs.forEach(x => URL.revokeObjectURL(x.preview));
+    busy = false;
+    if(list.length > 60) list.splice(0, list.length - 60);
+    save(); render();
+  }
+}
+function settle(i, k, how){
+  const p = cur(), m = (S.chats[p.id] || [])[i]; if(!m || !m.actions) return;
+  m.actionState = m.actionState || [];
+  if(m.actionState[k]) return;
+  m.actionState[k] = how === 'apply' ? (apply(m.actions[k], p) ? 'applied' : 'failed') : 'skipped';
+}
+
+/* ============ events ============ */
+document.addEventListener('click', e => {
+  const t = e.target.closest('button,[data-quick]'); if(!t) return;
+  const d = t.dataset;
+  if(d.t){ tab = d.t; filterCat = ''; render(); window.scrollTo(0,0); return; }
+  if(d.quick !== undefined){ const q = window.__quick[+d.quick]; if(+d.quick === 3){ $('#ask').value = q; $('#filePick').click(); } else ask(q); return; }
+  if(d.ask){ ask(d.ask); return; }
+  if(d.cat !== undefined){ filterCat = d.cat; render(); return; }
+  if(d.add){ editForm(d.add); return; }
+  if(d.edit){ const [kind,id] = d.edit.split(':'); const p = cur(); const arr = kind==='item'?p.items:kind==='wish'?p.wishlist:p.brands; editForm(kind, arr.find(x => x.id === id)); return; }
+  if(d.del){ const [kind,id] = d.del.split(':'); const p = cur(); const arr = kind==='item'?p.items:kind==='wish'?p.wishlist:p.brands; const i = arr.findIndex(x => x.id === id); if(i<0) return;
+    const [gone] = arr.splice(i,1); save(); render(); toast(`已刪除「${gone.name}」`, () => { arr.splice(i,0,gone); save(); render(); }); return; }
+  if(d.done){ const x = cur().wishlist.find(x => x.id === d.done); if(x){ x.done = !x.done; save(); render(); } return; }
+  if(d.apply){ const [i,k] = d.apply.split(':').map(Number); settle(i,k,'apply'); save(); render(); return; }
+  if(d.skip){ const [i,k] = d.skip.split(':').map(Number); settle(i,k,'skip'); save(); render(); return; }
+  if(d.applyall){ const i = +d.applyall; const m = (S.chats[cur().id]||[])[i]; if(m) m.actions.forEach((_,k) => settle(i,k,'apply')); save(); render(); toast('已全部套用'); return; }
+  if(d.unpick){ const [x] = pending.splice(+d.unpick,1); URL.revokeObjectURL(x.preview); render(); return; }
+  switch(d.act){
+    case 'send': { const v = $('#ask').value; ask(v); return; }
+    case 'pick': $('#filePick').click(); return;
+    case 'example': loadExample(); return;
+    case 'clearChat': { const p = cur(); const old = S.chats[p.id]; S.chats[p.id] = []; save(); render(); toast('已清除對話', () => { S.chats[p.id] = old; save(); render(); }); return; }
+    case 'rename': dialog(`<h3>重新命名</h3><form id="rn"><input id="rnv" value="${esc(cur().name)}" aria-label="名稱"><div class="foot"><button type="button" class="btn" data-close>取消</button><button class="btn pri">儲存</button></div></form>`, (dd, close) => dd.querySelector('#rn').onsubmit = ev => { ev.preventDefault(); const v = dd.querySelector('#rnv').value.trim(); if(v){ cur().name = v.slice(0,30); save(); close(); render(); } }); return;
+    case 'addProfile': dialog(`<h3>新增一個人</h3><form id="ap"><input id="apv" placeholder="例：家人、孩子" aria-label="名稱"><div class="foot"><button type="button" class="btn" data-close>取消</button><button class="btn pri">新增</button></div></form>`, (dd, close) => dd.querySelector('#ap').onsubmit = ev => { ev.preventDefault(); const v = dd.querySelector('#apv').value.trim(); if(v){ const p = blankProfile(v.slice(0,30)); S.profiles.push(p); S.active = p.id; save(); close(); render(); } }); return;
+    case 'delProfile': { const p = cur(); confirmBox(`刪除「${p.name}」的整個衣櫃？`, '刪除', () => { S.profiles = S.profiles.filter(x => x.id !== p.id); delete S.chats[p.id]; S.active = S.profiles[0].id; save(); render(); }); return; }
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(t.id === 'q'){ if(e.isComposing) return; query = t.value; $('#closetList').innerHTML = closetList(); return; }
+  if(t.dataset.pref){ cur().prefs[t.dataset.pref] = t.value; save(); return; }
+  if(t.id === 'ask'){ t.style.height = 'auto'; t.style.height = Math.min(140, t.scrollHeight) + 'px'; }
+});
+document.addEventListener('compositionend', e => { if(e.target.id === 'q'){ query = e.target.value; $('#closetList').innerHTML = closetList(); } });
+document.addEventListener('keydown', e => {
+  if(e.target.id === 'ask' && e.key === 'Enter' && !e.shiftKey && !e.isComposing && window.matchMedia('(min-width:700px)').matches){ e.preventDefault(); ask(e.target.value); }
+});
+$('#who').addEventListener('change', e => { S.active = e.target.value; filterCat = ''; query = ''; save(); render(); });
+$('#openSettings').addEventListener('click', openSettings);
+$('#filePick').addEventListener('change', async e => {
+  const files = [...e.target.files].slice(0, Math.max(0, 3 - pending.length)); e.target.value = '';
+  const draft = $('#ask') ? $('#ask').value : '';
+  for(const f of files){ try{ pending.push(await shrink(f)); }catch(_){ toast('這張照片讀不出來'); } }
+  tab = 'advisor'; render(); if($('#ask')) $('#ask').value = draft;
+  if(files.length && pending.length >= 3) toast('一次最多 3 張照片');
+});
+
+/* ============ boot ============ */
+(async () => {
+  let loaded = null;
+  try{ loaded = normalize(await Adapter.load()); }catch(_){ loaded = null; }
+  S = loaded || blankState();
+  $('#storeNote').textContent = Adapter.headerNote;
+  render();
+})();
+}
+</script>
+</body>
+</html>
